@@ -1,0 +1,26 @@
+{
+  "is_trained": true,
+  "qsvm_state": {
+    "model_type": "Quantum SVM (2-qubit)",
+    "is_trained": true,
+    "n_support_vectors": 51,
+    "support_vector_count": 51,
+    "decision_bias": -0.3074245992164257,
+    "feature_ranges": {
+      "min": [
+        0.0625,
+        0.9999999999999998,
+        0.15621654164157706
+      ],
+      "max": [
+        0.8125,
+        1.0000000000000002,
+        0.3135389584278437
+      ]
+    }
+  },
+  "metadata": {
+    "saved_at": "2026-03-25T18:42:24.214810",
+    "version": "1.0"
+  }
+}
