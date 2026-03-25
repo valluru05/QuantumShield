@@ -537,7 +537,7 @@ function handleQuantumPipelineInfer(req: http.IncomingMessage, res: http.ServerR
   req.on('end', () => {
     try {
       const data = JSON.parse(body);
-      const { signal, attack_type = 'normal', return_full_pipeline = true } = data;
+      const { signal, attack_type = 'normal', return_full_pipeline = true, visualization_only = false } = data;
 
       // Spawn Python process for quantum inference
       const pythonProc = spawn('python3', [
@@ -603,29 +603,32 @@ function handleQuantumPipelineInfer(req: http.IncomingMessage, res: http.ServerR
             result = JSON.parse(cleanedJson);
           }
 
-          // Broadcast to WebSocket clients for multi-device sync
-          broadcastToClients({
-            type: 'QUANTUM_ML_STATUS',
-            quantumMLData: {
-              type: 'QUANTUM_INFERENCE_COMPLETE',
-              result: result,
-              timestamp: new Date().toISOString(),
-            },
-          });
+          // Only broadcast and update state if NOT visualization_only
+          if (!visualization_only) {
+            // Broadcast to WebSocket clients for multi-device sync
+            broadcastToClients({
+              type: 'QUANTUM_ML_STATUS',
+              quantumMLData: {
+                type: 'QUANTUM_INFERENCE_COMPLETE',
+                result: result,
+                timestamp: new Date().toISOString(),
+              },
+            });
 
-          // Update global state with quantum ML results
-          if (result.confidence !== undefined) {
-            globalState.mlConfidence = Math.round(result.confidence * 100);
-          }
-          if (result.final_result) {
-            if (result.final_result === 'jamming') {
-              globalState.attackType = 'jamming';
-            } else if (result.final_result === 'spoofing') {
-              globalState.attackType = 'spoofing';
+            // Update global state with quantum ML results
+            if (result.confidence !== undefined) {
+              globalState.mlConfidence = Math.round(result.confidence * 100);
             }
-          }
-          if (result.metadata?.execution_times_ms?.total) {
-            globalState.mlResponseTimeMs = result.metadata.execution_times_ms.total;
+            if (result.final_result) {
+              if (result.final_result === 'jamming') {
+                globalState.attackType = 'jamming';
+              } else if (result.final_result === 'spoofing') {
+                globalState.attackType = 'spoofing';
+              }
+            }
+            if (result.metadata?.execution_times_ms?.total) {
+              globalState.mlResponseTimeMs = result.metadata.execution_times_ms.total;
+            }
           }
 
           res.writeHead(200, { 'Content-Type': 'application/json' });

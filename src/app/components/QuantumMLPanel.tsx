@@ -39,8 +39,9 @@ export function QuantumMLPanel() {
       // Generate random signal for demo (in production, use actual signal data)
       const signal = Array.from({ length: 64 }, () => Math.random());
 
-      // Use actual attack type from context, fallback to 'jamming' if none
-      const currentAttackType = attackType === 'none' ? 'jamming' : attackType;
+      // Use actual attack type from context, fallback to 'normal' if none
+      // This is for visualization only - should NOT change system state
+      const currentAttackType = attackType === 'none' ? 'normal' : attackType;
 
       const response = await fetch(`${API_BASE}/api/quantum/infer`, {
         method: 'POST',
@@ -48,7 +49,8 @@ export function QuantumMLPanel() {
         body: JSON.stringify({
           signal,
           attack_type: currentAttackType,
-          return_full_pipeline: true
+          return_full_pipeline: true,
+          visualization_only: true  // Flag to prevent state changes
         })
       });
 
