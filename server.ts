@@ -48,7 +48,7 @@ interface ModelDetails {
 }
 
 interface StateMessage {
-  type: 'MODE_CHANGE' | 'ATTACK_LAUNCHED' | 'STATE_UPDATE' | 'QUANTUM_ML_STATUS';
+  type: 'MODE_CHANGE' | 'ATTACK_LAUNCHED' | 'STATE_UPDATE' | 'QUANTUM_ML_STATUS' | 'PING';
   attackType?: 'none' | 'jamming' | 'spoofing';
   systemStatus?: 'normal' | 'under-attack' | 'processing' | 'detected' | 'switching' | 'secure';
   isProcessing?: boolean;
@@ -108,6 +108,16 @@ const server = http.createServer((req, res) => {
   } else if (pathname === '/api/quantum/train' && req.method === 'POST') {
     handleQuantumPipelineTrain(req, res);
   }
+  // QuantumShield++ New Routes
+  else if (pathname === '/api/qsdc/simulate' && req.method === 'POST') {
+    handleQSDCSimulate(req, res);
+  } else if (pathname === '/api/pqc/simulate' && req.method === 'POST') {
+    handlePQCSimulate(req, res);
+  } else if (pathname === '/api/quantum/walk' && req.method === 'POST') {
+    handleQuantumWalk(req, res);
+  } else if (pathname === '/api/ai/threat-intel' && req.method === 'GET') {
+    handleAIThreatIntel(req, res);
+  }
   // OLD Quantum ML Routes (using quantum_ml_trainer.py) - kept for backward compatibility
   else if (pathname === '/api/quantum-ml/train' && req.method === 'POST') {
     handleQuantumMLTrain(req, res);
@@ -152,6 +162,13 @@ wss.on('connection', (ws: WebSocket) => {
   ws.on('message', (message: string) => {
     try {
       const data: StateMessage = JSON.parse(message);
+
+      if (data.type === 'PING') {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'PONG' }));
+        }
+        return;
+      }
 
       if (data.type === 'MODE_CHANGE') {
         // Update global state
@@ -321,7 +338,10 @@ function handleQuantumMLEvaluate(
           0,
           Math.min(100, Number(parsed.probabilities?.jamming ?? 0) * 100)
         );
-        globalState.attackType = parsed.prediction === 'jamming' ? 'jamming' : 'spoofing';
+        globalState.attackType =
+          parsed.prediction === 'jamming' ? 'jamming'
+          : parsed.prediction === 'spoofing' ? 'spoofing'
+          : 'none';
 
         broadcastSystemState('STATE_UPDATE');
 
@@ -594,15 +614,33 @@ function handleQuantumPipelineInfer(req: http.IncomingMessage, res: http.ServerR
 
         try {
           const jsonStr = output.slice(firstBrace, lastBrace + 1);
-          // Replace Python-style single quotes with double quotes for JSON compatibility
-          const cleanedJson = jsonStr.replace(/'/g, '"');
           let result;
 
           try {
             result = JSON.parse(jsonStr);
           } catch (firstErr) {
-            // If first parse fails, try with cleaned version
-            result = JSON.parse(cleanedJson);
+            // Python output single-quoted repr, attempt a safer replacement
+            const cleaned = jsonStr
+              .replace(/(^|[{}[\]:, ]|")'|'([{}()[\]:, ]|$)/g, '$1"$2')
+              .replace(/True/g, 'true')
+              .replace(/False/g, 'false')
+              .replace(/None/g, 'null');
+            try {
+              result = JSON.parse(cleaned);
+            } catch (secondErr) {
+              // Final fallback
+              const simpleCleaned = jsonStr
+                .replace(/'/g, '"')
+                .replace(/True/g, 'true')
+                .replace(/False/g, 'false')
+                .replace(/None/g, 'null');
+              try {
+                result = JSON.parse(simpleCleaned);
+              } catch (thirdErr) {
+                console.error('All JSON parsing attempts failed:', thirdErr);
+                result = {};
+              }
+            }
           }
 
           // Only broadcast and update state if NOT visualization_only
@@ -626,6 +664,8 @@ function handleQuantumPipelineInfer(req: http.IncomingMessage, res: http.ServerR
                 globalState.attackType = 'jamming';
               } else if (result.final_result === 'spoofing') {
                 globalState.attackType = 'spoofing';
+              } else {
+                globalState.attackType = 'none';
               }
             }
             if (result.metadata?.execution_times_ms?.total) {
@@ -728,6 +768,224 @@ function handleQuantumPipelineTrain(req: http.IncomingMessage, res: http.ServerR
 }
 
 import os from 'os';
+
+// ============== QUANTUMSHIELD++ NEW HANDLERS ==============
+
+/**
+ * Handler for QSDC (Quantum Secure Direct Communication) simulation
+ */
+function handleQSDCSimulate(req: http.IncomingMessage, res: http.ServerResponse) {
+  let body = '';
+  req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+  req.on('end', () => {
+    try {
+      const data = JSON.parse(body || '{}');
+      const simulate_attack = data.simulate_attack === true;
+
+      const pythonProc = spawn('python3', [
+        path.join(process.cwd(), 'quantum', 'quantum_qsdc.py'),
+        '--mode', simulate_attack ? 'attack' : 'establish',
+      ]);
+
+      let output = '';
+      let errorOutput = '';
+
+      pythonProc.stdout.on('data', (chunk: Buffer) => { output += chunk.toString(); });
+      pythonProc.stderr.on('data', (chunk: Buffer) => { errorOutput += chunk.toString(); });
+
+      pythonProc.on('close', (code: number) => {
+        if (code !== 0) {
+          // Return simulated result if Python fails
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: true,
+            simulated: true,
+            session_id: `QS-${Date.now()}`,
+            is_established: !simulate_attack,
+            qkd_result: {
+              is_secure: !simulate_attack,
+              eavesdrop_detected: simulate_attack,
+              qber: simulate_attack ? 0.18 : 0.02,
+              final_key_length: 256,
+              key_hex: Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+            },
+            timestamp: new Date().toISOString(),
+          }));
+          return;
+        }
+
+        try {
+          const result = JSON.parse(output);
+
+          // Broadcast QSDC status via WebSocket
+          broadcastToClients({
+            type: 'QUANTUM_ML_STATUS',
+            quantumMLData: {
+              type: 'QUANTUM_INFERENCE_COMPLETE',
+              result: { qsdc_status: result.success ? 'secure' : 'failed', ...result },
+              timestamp: new Date().toISOString(),
+            },
+          });
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to parse QSDC result', raw: output }));
+        }
+      });
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    }
+  });
+}
+
+/**
+ * Handler for PQC (Post-Quantum Cryptography) simulation
+ */
+function handlePQCSimulate(req: http.IncomingMessage, res: http.ServerResponse) {
+  let body = '';
+  req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+  req.on('end', () => {
+    try {
+      const data = JSON.parse(body || '{}');
+      const kyber_level = data.kyber_level || 768;
+
+      const pythonProc = spawn('python3', [
+        path.join(process.cwd(), 'quantum', 'quantum_pqc.py'),
+        '--mode', 'exchange',
+        '--kyber-level', String(kyber_level),
+      ]);
+
+      let output = '';
+
+      pythonProc.stdout.on('data', (chunk: Buffer) => { output += chunk.toString(); });
+      pythonProc.stderr.on('data', () => {});
+
+      pythonProc.on('close', (code: number) => {
+        if (code !== 0) {
+          // Return simulated result
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: true,
+            simulated: true,
+            security: {
+              classical_security_bits: 192,
+              quantum_security_bits: 128,
+              shor_resistant: true,
+              grover_resistant: true,
+              nist_pqc_standardized: true,
+              attack_resistance_percent: 98.7,
+            },
+            kem: { algorithm: `CRYSTALS-Kyber-${kyber_level}` },
+            dsa: { algorithm: 'CRYSTALS-Dilithium3' },
+            timestamp: new Date().toISOString(),
+          }));
+          return;
+        }
+
+        try {
+          const result = JSON.parse(output);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to parse PQC result' }));
+        }
+      });
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    }
+  });
+}
+
+/**
+ * Handler for standalone Quantum Walk simulation
+ */
+function handleQuantumWalk(req: http.IncomingMessage, res: http.ServerResponse) {
+  let body = '';
+  req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+  req.on('end', () => {
+    try {
+      const data = JSON.parse(body || '{}');
+      const attack_type = data.attack_type || 'normal';
+
+      const pythonProc = spawn('python3', [
+        path.join(process.cwd(), 'quantum', 'quantum_pipeline.py'),
+        '--mode', 'infer',
+        '--attack_type', attack_type,
+      ]);
+
+      let output = '';
+      pythonProc.stdout.on('data', (chunk: Buffer) => { output += chunk.toString(); });
+      pythonProc.stderr.on('data', () => {});
+
+      pythonProc.on('close', (code: number) => {
+        if (code !== 0) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Quantum walk failed' }));
+          return;
+        }
+
+        const firstBrace = output.indexOf('{');
+        const lastBrace = output.lastIndexOf('}');
+
+        if (firstBrace === -1 || lastBrace === -1) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'No JSON output from quantum walk' }));
+          return;
+        }
+
+        try {
+          const result = JSON.parse(output.slice(firstBrace, lastBrace + 1));
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, ...result }));
+        } catch {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Parse failed' }));
+        }
+      });
+    } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid request' }));
+    }
+  });
+}
+
+/**
+ * Handler for AI Threat Intelligence
+ */
+function handleAIThreatIntel(req: http.IncomingMessage, res: http.ServerResponse) {
+  const threatLevel = globalState.attackType !== 'none' ? 75 : 12;
+  const prediction = globalState.attackType !== 'none' ? globalState.attackType : 'normal';
+
+  const intel = {
+    threat_level: threatLevel,
+    prediction,
+    confidence: globalState.mlConfidence ?? 0,
+    forecast: Array.from({ length: 6 }, (_, i) => ({
+      time: `+${i}m`,
+      threat_probability: Math.max(0, Math.min(100, threatLevel + (Math.random() - 0.5) * 20)),
+    })),
+    recommendations: prediction === 'jamming'
+      ? ['Activate frequency hopping', 'Increase transmission power', 'Switch to DSSS']
+      : prediction === 'spoofing'
+      ? ['Enable multi-layer auth', 'Run signal fingerprinting', 'Verify channel identity']
+      : ['Maintain standard posture', 'Continue monitoring', 'Run diagnostics'],
+    attack_signature: globalState.attackType !== 'none'
+      ? `Detected ${globalState.attackType} pattern with ${Math.round(globalState.mlConfidence ?? 0)}% confidence`
+      : 'No anomalies detected',
+    system_status: globalState.systemStatus,
+    timestamp: new Date().toISOString(),
+  };
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(intel));
+}
+
+
 
 const PORT_NUM = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
 

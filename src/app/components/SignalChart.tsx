@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { Activity } from 'lucide-react';
 
 type AttackType = 'none' | 'jamming' | 'spoofing';
@@ -40,7 +40,7 @@ export function SignalChart({ attackType, systemStatus }: SignalChartProps) {
     };
 
     generateData();
-    const interval = setInterval(generateData, 100);
+    const interval = setInterval(generateData, 500);
 
     return () => clearInterval(interval);
   }, [attackType]);

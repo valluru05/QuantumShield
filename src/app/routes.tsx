@@ -1,12 +1,17 @@
-import { createBrowserRouter } from 'react-router';
-import { HomePage } from './pages/HomePage';
+import { createBrowserRouter, Navigate } from 'react-router';
+import { CommandCenterPage } from './pages/CommandCenterPage';
 import { AttackerPage } from './pages/AttackerPage';
 import { DefenderPage } from './pages/DefenderPage';
+import { QuantumLabPage } from './pages/QuantumLabPage';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <HomePage />,
+    element: <CommandCenterPage />,
+  },
+  {
+    path: '/command-center',
+    element: <Navigate to="/" replace />,
   },
   {
     path: '/attacker',
@@ -15,5 +20,13 @@ export const router = createBrowserRouter([
   {
     path: '/defender',
     element: <DefenderPage />,
+  },
+  {
+    path: '/quantum-lab',
+    element: <QuantumLabPage />,
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
   },
 ]);

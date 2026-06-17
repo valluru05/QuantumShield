@@ -1,81 +1,142 @@
 @custom-variant dark (&:is(.dark *));
 
+/* =====================================================
+   QUANTUMSHIELD++ — Quantum Cyber Defense Theme
+   ===================================================== */
+
 :root {
   --font-size: 16px;
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
-  --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
-  --destructive: #d4183d;
+
+  /* === Quantum Color Palette === */
+  --qs-bg-deep:      #020408;
+  --qs-bg-base:      #060d1a;
+  --qs-bg-surface:   #0a1628;
+  --qs-bg-elevated:  #0f1e35;
+  --qs-bg-panel:     rgba(6, 13, 26, 0.85);
+
+  --qs-cyan:         #00f5ff;
+  --qs-cyan-dim:     #00c4cc;
+  --qs-cyan-glow:    rgba(0, 245, 255, 0.25);
+  --qs-cyan-faint:   rgba(0, 245, 255, 0.08);
+
+  --qs-purple:       #8b5cf6;
+  --qs-purple-dim:   #6d28d9;
+  --qs-purple-glow:  rgba(139, 92, 246, 0.25);
+  --qs-purple-faint: rgba(139, 92, 246, 0.08);
+
+  --qs-red:          #ff2244;
+  --qs-red-dim:      #cc1133;
+  --qs-red-glow:     rgba(255, 34, 68, 0.25);
+  --qs-red-faint:    rgba(255, 34, 68, 0.08);
+
+  --qs-green:        #00ff88;
+  --qs-green-dim:    #00cc66;
+  --qs-green-glow:   rgba(0, 255, 136, 0.25);
+  --qs-green-faint:  rgba(0, 255, 136, 0.08);
+
+  --qs-amber:        #ffaa00;
+  --qs-amber-dim:    #cc8800;
+  --qs-amber-glow:   rgba(255, 170, 0, 0.25);
+  --qs-amber-faint:  rgba(255, 170, 0, 0.08);
+
+  --qs-white:        #e8f4ff;
+  --qs-gray-100:     #c4d4e8;
+  --qs-gray-300:     #7a95b8;
+  --qs-gray-500:     #3a5070;
+  --qs-gray-700:     #1a2d45;
+  --qs-gray-900:     #0a1628;
+
+  /* === Glow Effects === */
+  --glow-cyan:   0 0 10px rgba(0, 245, 255, 0.5), 0 0 30px rgba(0, 245, 255, 0.2);
+  --glow-red:    0 0 10px rgba(255, 34, 68, 0.5), 0 0 30px rgba(255, 34, 68, 0.2);
+  --glow-purple: 0 0 10px rgba(139, 92, 246, 0.5), 0 0 30px rgba(139, 92, 246, 0.2);
+  --glow-green:  0 0 10px rgba(0, 255, 136, 0.5), 0 0 30px rgba(0, 255, 136, 0.2);
+  --glow-amber:  0 0 10px rgba(255, 170, 0, 0.5), 0 0 30px rgba(255, 170, 0, 0.2);
+
+  /* === Borders === */
+  --border-cyan:   rgba(0, 245, 255, 0.2);
+  --border-red:    rgba(255, 34, 68, 0.2);
+  --border-purple: rgba(139, 92, 246, 0.2);
+  --border-dim:    rgba(255, 255, 255, 0.06);
+
+  /* === Tailwind Token Mapping === */
+  --background: var(--qs-bg-deep);
+  --foreground: var(--qs-white);
+  --card: var(--qs-bg-surface);
+  --card-foreground: var(--qs-white);
+  --popover: var(--qs-bg-elevated);
+  --popover-foreground: var(--qs-white);
+  --primary: var(--qs-cyan);
+  --primary-foreground: var(--qs-bg-deep);
+  --secondary: var(--qs-bg-elevated);
+  --secondary-foreground: var(--qs-gray-100);
+  --muted: var(--qs-bg-elevated);
+  --muted-foreground: var(--qs-gray-300);
+  --accent: var(--qs-purple-faint);
+  --accent-foreground: var(--qs-purple);
+  --destructive: var(--qs-red);
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
-  --input: transparent;
-  --input-background: #f3f3f5;
-  --switch-background: #cbced4;
+  --border: var(--border-dim);
+  --input: var(--qs-bg-elevated);
+  --input-background: var(--qs-bg-surface);
+  --switch-background: var(--qs-gray-500);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --ring: var(--qs-cyan);
+  --chart-1: var(--qs-cyan);
+  --chart-2: var(--qs-purple);
+  --chart-3: var(--qs-red);
+  --chart-4: var(--qs-green);
+  --chart-5: var(--qs-amber);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #030213;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Sidebar */
+  --sidebar: var(--qs-bg-surface);
+  --sidebar-foreground: var(--qs-white);
+  --sidebar-primary: var(--qs-cyan);
+  --sidebar-primary-foreground: var(--qs-bg-deep);
+  --sidebar-accent: var(--qs-bg-elevated);
+  --sidebar-accent-foreground: var(--qs-gray-100);
+  --sidebar-border: var(--border-dim);
+  --sidebar-ring: var(--qs-cyan);
 }
 
+/* Dark mode — same as root for this app (always dark) */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --background: var(--qs-bg-deep);
+  --foreground: var(--qs-white);
+  --card: var(--qs-bg-surface);
+  --card-foreground: var(--qs-white);
+  --popover: var(--qs-bg-elevated);
+  --popover-foreground: var(--qs-white);
+  --primary: var(--qs-cyan);
+  --primary-foreground: var(--qs-bg-deep);
+  --secondary: var(--qs-bg-elevated);
+  --secondary-foreground: var(--qs-gray-100);
+  --muted: var(--qs-bg-elevated);
+  --muted-foreground: var(--qs-gray-300);
+  --accent: var(--qs-purple-faint);
+  --accent-foreground: var(--qs-purple);
+  --destructive: var(--qs-red);
+  --destructive-foreground: #ffffff;
+  --border: var(--border-dim);
+  --input: var(--qs-bg-elevated);
+  --ring: var(--qs-cyan);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --chart-1: var(--qs-cyan);
+  --chart-2: var(--qs-purple);
+  --chart-3: var(--qs-red);
+  --chart-4: var(--qs-green);
+  --chart-5: var(--qs-amber);
+  --sidebar: var(--qs-bg-surface);
+  --sidebar-foreground: var(--qs-white);
+  --sidebar-primary: var(--qs-cyan);
+  --sidebar-primary-foreground: var(--qs-bg-deep);
+  --sidebar-accent: var(--qs-bg-elevated);
+  --sidebar-accent-foreground: var(--qs-gray-100);
+  --sidebar-border: var(--border-dim);
+  --sidebar-ring: var(--qs-cyan);
 }
 
 @theme inline {
@@ -126,56 +187,81 @@
 
   body {
     @apply bg-background text-foreground;
+    background-color: #020408;
+    color: #e8f4ff;
+    font-family: 'Inter', 'Outfit', system-ui, sans-serif;
   }
-
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
 
   html {
     font-size: var(--font-size);
   }
 
+  /* === Quantum scrollbar === */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #060d1a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 245, 255, 0.3);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 245, 255, 0.6);
+  }
+
+  /* === Typography === */
   h1 {
     font-size: var(--text-2xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
   }
 
   h2 {
     font-size: var(--text-xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   h3 {
     font-size: var(--text-lg);
-    font-weight: var(--font-weight-medium);
+    font-weight: 600;
     line-height: 1.5;
   }
 
   h4 {
     font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
+    font-weight: 500;
     line-height: 1.5;
   }
 
   label {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
+    font-size: var(--text-sm);
+    font-weight: 500;
     line-height: 1.5;
   }
 
   button {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
+    font-size: var(--text-sm);
+    font-weight: 600;
     line-height: 1.5;
   }
 
   input {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-normal);
+    font-size: var(--text-sm);
+    font-weight: 400;
     line-height: 1.5;
+    background-color: var(--qs-bg-elevated);
+    color: var(--qs-white);
+    border-color: var(--border-dim);
+  }
+
+  /* === Selection === */
+  ::selection {
+    background: rgba(0, 245, 255, 0.2);
+    color: #00f5ff;
   }
 }

@@ -1,233 +1,469 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
-import { Zap, AlertTriangle, ArrowLeft, Activity } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Zap, AlertTriangle, ArrowLeft, Activity, Radio, Target, ChevronRight, Shield, Cpu } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useSystem } from '../context/SystemContext';
 import { SignalChart } from '../components/SignalChart';
 import { ConnectionStatus } from '../components/ConnectionStatus';
+import { QuantumWalkViz } from '../components/QuantumWalkViz';
+
+const ATTACK_CONFIGS = [
+  {
+    type: 'jamming' as const,
+    label: 'JAMMING ATTACK',
+    sub: 'High-power interference burst',
+    icon: Zap,
+    color: '#ff2244',
+    border: 'rgba(255,34,68,0.3)',
+    bg: 'rgba(255,34,68,0.06)',
+    description: 'Floods target frequency band with broadband noise, disrupting communication.',
+    params: [
+      { label: 'POWER', value: '87 dBm' },
+      { label: 'FREQ', value: '2.4 GHz' },
+      { label: 'TYPE', value: 'Broadband' },
+    ],
+  },
+  {
+    type: 'spoofing' as const,
+    label: 'SPOOFING ATTACK',
+    sub: 'Signal identity manipulation',
+    icon: AlertTriangle,
+    color: '#ffaa00',
+    border: 'rgba(255,170,0,0.3)',
+    bg: 'rgba(255,170,0,0.06)',
+    description: 'Impersonates legitimate signal source with forged authentication headers.',
+    params: [
+      { label: 'TARGET', value: 'UAV_ALPHA' },
+      { label: 'METHOD', value: 'GPS Spoof' },
+      { label: 'DELAY', value: '12 ms' },
+    ],
+  },
+];
+
+function AttackMeter({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-[10px] font-mono">
+        <span style={{ color: '#3a5070' }}>{label}</span>
+        <span style={{ color }}>{value}%</span>
+      </div>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+        <motion.div
+          className="h-full rounded-full"
+          animate={{ width: `${value}%` }}
+          transition={{ duration: 0.8 }}
+          style={{ background: color, boxShadow: `0 0 6px ${color}88` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function AttackerPage() {
   const { attackType, systemStatus, isProcessing, launchAttack } = useSystem();
+  const [activeAttack, setActiveAttack] = useState<'jamming' | 'spoofing' | null>(null);
+  const [walkProbs] = useState<number[]>(() => Array(16).fill(0).map(() => Math.random()));
 
-  const getAttackStatus = () => {
-    if (systemStatus === 'normal') return 'Standing by...';
-    if (systemStatus === 'under-attack') return 'Attack in progress...';
-    if (systemStatus === 'processing') return 'Defender analyzing...';
-    if (systemStatus === 'detected') return 'Attack detected by defender!';
-    if (systemStatus === 'switching') return 'Defender switching channels...';
-    if (systemStatus === 'secure') return 'Attack mitigated - Secure channel active';
-    return 'Ready';
+  const handleAttack = (type: 'jamming' | 'spoofing') => {
+    setActiveAttack(type);
+    launchAttack(type);
   };
 
-  const getStatusColor = () => {
-    if (systemStatus === 'normal') return 'text-gray-400';
-    if (systemStatus === 'under-attack') return 'text-red-500';
-    if (systemStatus === 'detected') return 'text-yellow-500';
-    if (systemStatus === 'secure') return 'text-cyan-500';
-    return 'text-gray-400';
+  const getStatusBadge = () => {
+    if (systemStatus === 'normal') return { text: 'STANDING BY', color: '#3a5070' };
+    if (systemStatus === 'under-attack') return { text: 'ATTACK ACTIVE', color: '#ff2244' };
+    if (systemStatus === 'processing') return { text: 'DEFENDER ANALYZING', color: '#ffaa00' };
+    if (systemStatus === 'detected') return { text: 'ATTACK DETECTED', color: '#ffaa00' };
+    if (systemStatus === 'switching') return { text: 'CHANNEL SWITCHING', color: '#8b5cf6' };
+    if (systemStatus === 'secure') return { text: 'NEUTRALIZED', color: '#00f5ff' };
+    return { text: 'READY', color: '#3a5070' };
   };
+
+  const badge = getStatusBadge();
+  const attackEffectiveness = systemStatus === 'secure' ? 0 : systemStatus === 'detected' ? 35 : attackType !== 'none' ? 87 : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0e1a] via-[#0f1419] to-[#1a1f2e] text-white">
+    <div
+      className="min-h-screen text-white"
+      style={{ background: 'radial-gradient(ellipse at 70% 30%, #1a0608 0%, #020408 60%)' }}
+    >
+      {/* Top Nav Bar */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000,
+          background: 'rgba(2,4,8,0.96)',
+          borderBottom: '1px solid rgba(0,245,255,0.12)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '10px 24px',
+        }}
+      >
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 10px',
+            borderRadius: 6,
+            border: '1px solid #3a507033',
+            color: '#3a5070',
+            fontFamily: 'monospace',
+            fontSize: 10,
+            letterSpacing: '0.1em',
+            textDecoration: 'none',
+          }}
+        >
+          <ArrowLeft size={11} />
+          COMMAND CENTER
+        </Link>
+        <span style={{ color: '#1a2d45', fontFamily: 'monospace', fontSize: 10 }}>|</span>
+        <span
+          style={{
+            fontFamily: 'monospace',
+            fontSize: 10,
+            letterSpacing: '0.1em',
+            color: '#ff2244',
+            fontWeight: 700,
+          }}
+        >
+          ATTACK SIMULATOR
+        </span>
+        <div style={{ flex: 1 }} />
+        <Link
+          to="/attacker"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 10px',
+            borderRadius: 6,
+            border: '1px solid #ff224466',
+            color: '#ff2244',
+            fontFamily: 'monospace',
+            fontSize: 10,
+            letterSpacing: '0.1em',
+            textDecoration: 'none',
+          }}
+        >
+          <Zap size={11} />
+          ATTACKER
+        </Link>
+        <Link
+          to="/defender"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 10px',
+            borderRadius: 6,
+            border: '1px solid #00f5ff33',
+            color: '#00f5ff',
+            fontFamily: 'monospace',
+            fontSize: 10,
+            letterSpacing: '0.1em',
+            textDecoration: 'none',
+          }}
+        >
+          <Shield size={11} />
+          DEFENDER
+        </Link>
+        <Link
+          to="/quantum-lab"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 10px',
+            borderRadius: 6,
+            border: '1px solid #8b5cf633',
+            color: '#8b5cf6',
+            fontFamily: 'monospace',
+            fontSize: 10,
+            letterSpacing: '0.1em',
+            textDecoration: 'none',
+          }}
+        >
+          <Cpu size={11} />
+          QUANTUM LAB
+        </Link>
+      </div>
+
       {/* Header */}
-      <header className="border-b border-gray-800/50 bg-black/30 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Link to="/" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-                <span className="text-sm">Back</span>
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center">
-                  <Zap className="w-6 h-6" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Attacker Console</h1>
-                  <p className="text-xs text-gray-400">Electronic Warfare Operations</p>
-                </div>
-              </div>
+      <header
+        className="px-6 py-4 flex items-center justify-between border-b"
+        style={{ background: 'rgba(2,4,8,0.4)', borderColor: 'rgba(255,34,68,0.12)', backdropFilter: 'blur(4px)' }}
+      >
+        <div className="flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-1.5 text-xs font-mono transition-colors" style={{ color: '#3a5070' }}>
+            <ArrowLeft size={14} />
+            COMMAND CENTER
+          </Link>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center"
+              style={{
+                background: 'rgba(255,34,68,0.12)',
+                border: '1px solid rgba(255,34,68,0.3)',
+                boxShadow: attackType !== 'none' ? '0 0 15px rgba(255,34,68,0.3)' : 'none',
+              }}
+            >
+              <Zap size={18} style={{ color: '#ff2244' }} />
             </div>
-            <div className="flex items-center gap-4">
-              <ConnectionStatus />
-              <div className="flex items-center gap-2 px-4 py-2 bg-gray-900/50 rounded-lg border border-gray-800">
-                <div className={`w-2 h-2 rounded-full ${systemStatus === 'under-attack' ? 'bg-red-500' : 'bg-gray-500'} animate-pulse`}></div>
-                <span className="text-sm font-medium">Attack Mode</span>
+            <div>
+              <div className="text-sm font-black tracking-widest font-mono" style={{ color: '#ff2244' }}>
+                ATTACK SIMULATOR
               </div>
+              <div className="text-[10px]" style={{ color: '#3a5070' }}>Electronic Warfare Operations</div>
             </div>
           </div>
         </div>
+        <div className="flex items-center gap-4">
+          <ConnectionStatus />
+          <motion.div
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            animate={attackType !== 'none' ? { backgroundColor: ['rgba(255,34,68,0.05)', 'rgba(255,34,68,0.12)', 'rgba(255,34,68,0.05)'] } : {}}
+            transition={{ duration: 0.8, repeat: Infinity }}
+            style={{
+              background: `${badge.color}0a`,
+              border: `1px solid ${badge.color}33`,
+            }}
+          >
+            <motion.div
+              className="w-1.5 h-1.5 rounded-full"
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              style={{ background: badge.color }}
+            />
+            <span className="text-xs font-bold font-mono tracking-widest" style={{ color: badge.color }}>
+              {badge.text}
+            </span>
+          </motion.div>
+        </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Attack Controls */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Attack Arsenal */}
-            <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-800/50 p-6">
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-300 mb-1">Attack Arsenal</h2>
-                <p className="text-xs text-gray-500">Launch electronic warfare operations</p>
-              </div>
-
-              <div className="space-y-4">
-                {/* Jamming Attack Button */}
+      <main className="p-6 grid grid-cols-12 gap-5">
+        {/* LEFT: Attack Arsenal */}
+        <div className="col-span-4 space-y-4">
+          {/* Attack buttons */}
+          {ATTACK_CONFIGS.map((atk) => {
+            const Icon = atk.icon;
+            const isActive = attackType === atk.type;
+            return (
+              <motion.div
+                key={atk.type}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: atk.type === 'jamming' ? 0.1 : 0.2 }}
+              >
                 <motion.button
-                  onClick={() => launchAttack('jamming')}
+                  onClick={() => !isProcessing && handleAttack(atk.type)}
                   disabled={isProcessing}
-                  className="w-full group relative overflow-hidden rounded-lg border-2 border-red-500/50 bg-red-500/10 p-6 transition-all hover:bg-red-500/20 hover:border-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  whileHover={!isProcessing ? { scale: 1.02 } : {}}
+                  whileHover={!isProcessing ? { scale: 1.02, y: -2 } : {}}
                   whileTap={!isProcessing ? { scale: 0.98 } : {}}
+                  className="w-full relative overflow-hidden rounded-xl p-5 text-left group"
+                  style={{
+                    background: isActive ? `${atk.color}12` : atk.bg,
+                    border: `1.5px solid ${isActive ? atk.color + '66' : atk.border}`,
+                    boxShadow: isActive ? `0 0 20px ${atk.color}22` : 'none',
+                    cursor: isProcessing ? 'not-allowed' : 'pointer',
+                    opacity: isProcessing && !isActive ? 0.5 : 1,
+                  }}
                 >
-                  <div className="relative z-10 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-red-500/20 border border-red-500 flex items-center justify-center">
-                      <Zap className="w-6 h-6 text-red-500" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <h3 className="text-base font-bold text-red-500 mb-1">Jamming Attack</h3>
-                      <p className="text-xs text-gray-400">High-power interference</p>
-                    </div>
-                  </div>
-                  
+                  {/* Animated shimmer */}
                   {!isProcessing && (
                     <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/20 to-red-500/0"
-                      animate={{
-                        x: ['-100%', '100%'],
+                      className="absolute inset-0"
+                      style={{
+                        background: `linear-gradient(90deg, transparent, ${atk.color}18, transparent)`,
+                        backgroundSize: '200% 100%',
                       }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
+                      animate={{ backgroundPosition: ['-200% 0', '200% 0'] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
                     />
                   )}
-                </motion.button>
 
-                {/* Spoofing Attack Button */}
-                <motion.button
-                  onClick={() => launchAttack('spoofing')}
-                  disabled={isProcessing}
-                  className="w-full group relative overflow-hidden rounded-lg border-2 border-yellow-500/50 bg-yellow-500/10 p-6 transition-all hover:bg-yellow-500/20 hover:border-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  whileHover={!isProcessing ? { scale: 1.02 } : {}}
-                  whileTap={!isProcessing ? { scale: 0.98 } : {}}
-                >
-                  <div className="relative z-10 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-yellow-500/20 border border-yellow-500 flex items-center justify-center">
-                      <AlertTriangle className="w-6 h-6 text-yellow-500" />
+                  {/* Active threat pulse */}
+                  {isActive && (
+                    <motion.div
+                      className="absolute inset-0 rounded-xl"
+                      animate={{ boxShadow: [`0 0 0 0 ${atk.color}44`, `0 0 0 8px ${atk.color}00`] }}
+                      transition={{ duration: 1, repeat: Infinity }}
+                    />
+                  )}
+
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: `${atk.color}15`,
+                          border: `1.5px solid ${atk.color}55`,
+                          boxShadow: isActive ? `0 0 15px ${atk.color}44` : 'none',
+                        }}
+                      >
+                        <Icon size={22} style={{ color: atk.color }} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-black font-mono tracking-wider" style={{ color: atk.color }}>
+                          {atk.label}
+                        </div>
+                        <div className="text-[10px]" style={{ color: '#3a5070' }}>{atk.sub}</div>
+                      </div>
+                      {isActive && (
+                        <div className="ml-auto text-[10px] font-mono px-2 py-1 rounded" style={{ background: `${atk.color}15`, color: atk.color }}>
+                          ACTIVE
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1 text-left">
-                      <h3 className="text-base font-bold text-yellow-500 mb-1">Spoofing Attack</h3>
-                      <p className="text-xs text-gray-400">Signal manipulation</p>
+                    <p className="text-[11px] mb-3" style={{ color: '#7a95b8' }}>{atk.description}</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {atk.params.map(({ label, value }) => (
+                        <div key={label} className="p-1.5 rounded" style={{ background: 'rgba(0,0,0,0.3)', border: `1px solid ${atk.color}11` }}>
+                          <div className="text-[9px] font-mono" style={{ color: '#1a2d45' }}>{label}</div>
+                          <div className="text-[11px] font-bold font-mono" style={{ color: atk.color }}>{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-end mt-3 text-[10px] font-mono" style={{ color: `${atk.color}88` }}>
+                      LAUNCH <ChevronRight size={10} />
                     </div>
                   </div>
-
-                  {!isProcessing && (
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-yellow-500/0 via-yellow-500/20 to-yellow-500/0"
-                      animate={{
-                        x: ['-100%', '100%'],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'linear',
-                        delay: 1
-                      }}
-                    />
-                  )}
                 </motion.button>
+              </motion.div>
+            );
+          })}
+
+          {/* Operation Status */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="rounded-xl p-4 space-y-3"
+            style={{ background: 'rgba(6,13,26,0.85)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="text-[10px] font-mono tracking-widest flex items-center gap-2" style={{ color: '#ff2244' }}>
+              <Target size={10} />
+              OPERATION STATUS
+            </div>
+            <div className="space-y-2.5">
+              {[
+                { label: 'ACTIVE ATTACK', value: attackType === 'none' ? 'NONE' : attackType.toUpperCase(), color: attackType !== 'none' ? '#ff2244' : '#3a5070' },
+                { label: 'TARGET', value: 'UAV_ALPHA ↔ CMD_OMEGA', color: '#7a95b8' },
+                { label: 'DEFENSE RESPONSE', value: systemStatus.toUpperCase(), color: badge.color },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+                  <span className="text-[10px] font-mono" style={{ color: '#3a5070' }}>{label}</span>
+                  <span className="text-[11px] font-bold font-mono" style={{ color }}>{value}</span>
+                </div>
+              ))}
+              <AttackMeter label="EFFECTIVENESS" value={attackEffectiveness} color={attackEffectiveness > 60 ? '#ff2244' : '#ffaa00'} />
+              <AttackMeter label="SIGNAL DISRUPTION" value={attackType !== 'none' ? 73 : 0} color="#ff2244" />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* RIGHT: Visualization */}
+        <div className="col-span-8 space-y-5">
+          {/* Target comm link status */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl p-5"
+            style={{
+              background: 'rgba(6,13,26,0.85)',
+              border: `1px solid ${attackType !== 'none' ? 'rgba(255,34,68,0.3)' : systemStatus === 'secure' ? 'rgba(0,245,255,0.3)' : 'rgba(255,255,255,0.06)'}`,
+              boxShadow: attackType !== 'none' ? '0 0 20px rgba(255,34,68,0.08)' : systemStatus === 'secure' ? '0 0 20px rgba(0,245,255,0.08)' : 'none',
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Radio size={14} style={{ color: '#3a5070' }} />
+                <span className="text-xs font-mono tracking-widest" style={{ color: '#7a95b8' }}>
+                  TARGET COMMUNICATION LINK
+                </span>
               </div>
+              <span className="text-[10px] font-mono" style={{ color: '#3a5070' }}>UAV_ALPHA ↔ CMD_OMEGA</span>
             </div>
 
-            {/* Attack Status */}
-            <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-800/50 p-6">
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-300 mb-1">Operation Status</h2>
-                <p className="text-xs text-gray-500">Current attack state</p>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between py-2 border-b border-gray-800">
-                  <span className="text-xs text-gray-500">Status</span>
-                  <span className={`text-xs font-bold ${getStatusColor()}`}>
-                    {getAttackStatus()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-gray-800">
-                  <span className="text-xs text-gray-500">Active Attack</span>
-                  <span className="text-xs font-bold text-gray-300">
-                    {attackType === 'none' ? 'None' : attackType === 'jamming' ? 'Jamming' : 'Spoofing'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-gray-800">
-                  <span className="text-xs text-gray-500">Target</span>
-                  <span className="text-xs font-bold text-gray-300">
-                    Drone-Command Link
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-xs text-gray-500">Effectiveness</span>
-                  <span className="text-xs font-bold text-red-500">
-                    {systemStatus === 'secure' ? '0%' : attackType !== 'none' ? '87%' : 'N/A'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Signal Monitoring */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Target Communication */}
-            <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg border border-gray-800/50 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-300">Target Communication Link</h2>
-                <span className="text-xs text-gray-500 font-mono">UAV_ALPHA ↔ CMD_OMEGA</span>
-              </div>
-
-              <div className={`p-4 rounded-lg border-2 mb-6 ${
-                systemStatus === 'secure' 
-                  ? 'bg-cyan-500/10 border-cyan-500/50' 
-                  : attackType !== 'none'
-                  ? 'bg-red-500/10 border-red-500/50'
-                  : 'bg-green-500/10 border-green-500/50'
-              }`}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={systemStatus}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="p-4 rounded-lg border"
+                style={{
+                  background: attackType !== 'none' ? 'rgba(255,34,68,0.06)' : systemStatus === 'secure' ? 'rgba(0,245,255,0.06)' : 'rgba(0,255,136,0.04)',
+                  borderColor: attackType !== 'none' ? 'rgba(255,34,68,0.2)' : systemStatus === 'secure' ? 'rgba(0,245,255,0.2)' : 'rgba(0,255,136,0.15)',
+                }}
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className={`font-bold ${
-                      systemStatus === 'secure' 
-                        ? 'text-cyan-500' 
-                        : attackType !== 'none'
-                        ? 'text-red-500'
-                        : 'text-green-500'
-                    }`}>
-                      {systemStatus === 'secure' ? 'ENCRYPTED CHANNEL' : attackType !== 'none' ? 'COMPROMISED' : 'VULNERABLE'}
+                    <p className="font-black text-lg font-mono" style={{
+                      color: attackType !== 'none' ? '#ff2244' : systemStatus === 'secure' ? '#00f5ff' : '#00ff88',
+                      textShadow: `0 0 15px ${attackType !== 'none' ? 'rgba(255,34,68,0.5)' : systemStatus === 'secure' ? 'rgba(0,245,255,0.5)' : 'rgba(0,255,136,0.5)'}`,
+                    }}>
+                      {attackType !== 'none' ? '⚡ SIGNAL COMPROMISED' : systemStatus === 'secure' ? '🔒 QUANTUM ENCRYPTED' : '● CHANNEL ACTIVE'}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {systemStatus === 'secure' 
-                        ? 'Target has activated quantum defense' 
-                        : attackType !== 'none'
-                        ? 'Attack is affecting target communication'
-                        : 'Target is using standard encryption'}
+                    <p className="text-xs mt-1" style={{ color: '#3a5070' }}>
+                      {attackType !== 'none' ? `${attackType.toUpperCase()} attack disrupting communication channel` : systemStatus === 'secure' ? 'Target activated quantum-secure communication' : 'Target using standard AES-256 encryption'}
                     </p>
                   </div>
-                  <Activity className={`w-8 h-8 ${
-                    systemStatus === 'secure' 
-                      ? 'text-cyan-500' 
-                      : attackType !== 'none'
-                      ? 'text-red-500'
-                      : 'text-green-500'
-                  }`} />
+                  <Activity size={28} style={{ color: attackType !== 'none' ? '#ff2244' : systemStatus === 'secure' ? '#00f5ff' : '#00ff88' }} />
                 </div>
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Signal Chart */}
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ background: 'rgba(6,13,26,0.85)', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+              <span className="text-[10px] font-mono tracking-widest" style={{ color: '#3a5070' }}>SIGNAL MONITOR — LIVE WAVEFORM</span>
+              <div className="flex items-center gap-2">
+                <motion.div className="w-1.5 h-1.5 rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} style={{ background: '#ff2244' }} />
+                <span className="text-[9px] font-mono" style={{ color: '#ff2244' }}>RECORDING</span>
               </div>
             </div>
-
-            {/* Signal Visualization */}
-            <SignalChart 
-              attackType={attackType}
-              systemStatus={systemStatus}
-            />
+            <SignalChart attackType={attackType} systemStatus={systemStatus} />
           </div>
+
+          {/* Quantum walk attack propagation */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="rounded-xl p-5 space-y-3"
+            style={{ background: 'rgba(6,13,26,0.85)', border: '1px solid rgba(255,34,68,0.1)' }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-mono tracking-widest" style={{ color: '#ff2244' }}>
+                QUANTUM WALK ATTACK PROPAGATION
+              </div>
+              <span className="text-[9px] font-mono" style={{ color: '#3a5070' }}>
+                {attackType !== 'none' ? `${attackType.toUpperCase()} PATTERN` : 'IDLE'}
+              </span>
+            </div>
+            <QuantumWalkViz
+              probabilities={walkProbs}
+              attackType={attackType === 'none' ? 'normal' : attackType}
+              isAnimating={attackType !== 'none'}
+            />
+            <div className="text-[10px] font-mono" style={{ color: '#3a5070' }}>
+              {attackType === 'jamming'
+                ? 'High-entropy noise disrupts quantum walk probability distribution across all positions'
+                : attackType === 'spoofing'
+                ? 'Biased quantum walk mimics legitimate signal patterns with spoofed phase relationships'
+                : 'Nominal Hadamard coin walk — no attack propagation detected'}
+            </div>
+          </motion.div>
         </div>
       </main>
     </div>

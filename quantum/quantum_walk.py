@@ -277,6 +277,54 @@ class QuantumWalk:
             'n_positions': self.n_positions,
         }
 
+    def get_frame_data(self, signal: np.ndarray, step: int) -> Dict:
+        """Get probability distribution at a specific walk step for animation frames."""
+        state = self.create_initial_state(signal)
+        for _ in range(min(step, self.n_steps)):
+            state = self.evolve_step(state)
+        prob_dist = np.abs(state) ** 2
+        prob_dist = prob_dist / (np.sum(prob_dist) + 1e-8)
+        entropy = float(-np.sum(prob_dist * np.log(prob_dist + 1e-8)))
+        return {
+            'step': step,
+            'probabilities': prob_dist.tolist(),
+            'entropy': entropy,
+            'peak_position': int(np.argmax(prob_dist)),
+            'spread': float(np.std(prob_dist)),
+        }
+
+    def export_animation_frames(self, signal: np.ndarray) -> list:
+        """Export all animation frames for the UI walk visualization."""
+        return [self.get_frame_data(signal, s) for s in range(self.n_steps + 1)]
+
+    def compute_von_neumann_entropy(self, prob_dist: np.ndarray) -> float:
+        """Compute von Neumann entropy of the probability distribution."""
+        # Treat prob_dist as diagonal density matrix eigenvalues
+        nonzero = prob_dist[prob_dist > 1e-12]
+        return float(-np.sum(nonzero * np.log2(nonzero)))
+
+    def detect_attack_signature(self, prob_dist: np.ndarray) -> Dict:
+        """Compute detailed attack signature metrics from probability distribution."""
+        entropy = self.compute_von_neumann_entropy(prob_dist)
+        peak_val = float(np.max(prob_dist))
+        peak_idx = int(np.argmax(prob_dist))
+        spread = float(np.std(prob_dist))
+        skewness = float(np.mean(((np.arange(len(prob_dist)) - np.mean(np.arange(len(prob_dist)))) / (np.std(np.arange(len(prob_dist))) + 1e-8)) ** 3))
+
+        return {
+            'entropy_bits': entropy,
+            'peak_value': peak_val,
+            'peak_position': peak_idx,
+            'spread': spread,
+            'skewness': skewness,
+            'flatness': float(1.0 / (peak_val * len(prob_dist) + 1e-8)),
+            'attack_indicators': {
+                'jamming_score': float(min(1.0, entropy / 4.0)),
+                'spoofing_score': float(min(1.0, peak_val * 2.0)) if peak_idx not in range(3, len(prob_dist) - 3) else 0.1,
+                'normal_score': float(max(0.0, 1.0 - entropy / 3.0 - spread)),
+            }
+        }
+
 
 def test_quantum_walk():
     """Test quantum walk module."""

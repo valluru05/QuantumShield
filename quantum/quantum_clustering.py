@@ -256,6 +256,60 @@ class QuantumClustering:
             }
         }
 
+    def get_cluster_3d_coordinates(self) -> Dict[str, list]:
+        """Generate 3D coordinates for cluster visualization from reference states."""
+        coords = {}
+        centers = {
+            'normal':   [0.0, 0.0, 0.0],
+            'jamming':  [2.5, -1.5, 0.8],
+            'spoofing': [-2.0, 1.8, -0.5],
+        }
+        for label, center in centers.items():
+            state = self.reference_states.get(label)
+            if state is None:
+                continue
+            n_points = 16
+            np.random.seed(hash(label) % (2**31))
+            scatter = np.random.randn(n_points, 3) * 0.6
+            points = scatter + np.array(center)
+            coords[label] = points.tolist()
+        return coords
+
+    def compute_kernel_heatmap(self) -> Dict:
+        """Compute full 3x3 kernel matrix between all reference states."""
+        labels = ['normal', 'jamming', 'spoofing']
+        matrix = []
+        for l1 in labels:
+            row = []
+            for l2 in labels:
+                s1 = self.reference_states.get(l1)
+                s2 = self.reference_states.get(l2)
+                if s1 is not None and s2 is not None:
+                    val = self.compute_quantum_kernel(s1, s2)
+                else:
+                    val = 0.0
+                row.append(round(float(val), 4))
+            matrix.append(row)
+        return {
+            'labels': labels,
+            'matrix': matrix,
+        }
+
+    def get_cluster_statistics(self) -> Dict:
+        """Get statistical properties of each cluster's reference state."""
+        stats = {}
+        for label, state in self.reference_states.items():
+            probs = np.abs(state) ** 2
+            probs = probs / np.sum(probs)
+            stats[label] = {
+                'probabilities': probs.tolist(),
+                'entropy': float(-np.sum(probs * np.log2(probs + 1e-12))),
+                'purity': float(np.sum(probs ** 2)),
+                'norm': float(np.linalg.norm(state)),
+                'dominant_basis': ['|00⟩', '|01⟩', '|10⟩', '|11⟩'][int(np.argmax(probs))],
+            }
+        return stats
+
 
 def test_quantum_clustering():
     """Test quantum clustering module."""

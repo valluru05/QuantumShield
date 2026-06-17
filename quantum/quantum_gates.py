@@ -291,6 +291,55 @@ ry(0.78) q[1];"""
             'n_qubits': 2,
         }
 
+    def circuit_to_openqasm_v2(self, theta_freq: float = 0.0, phi_power: float = 0.0, theta_noise: float = 0.0) -> str:
+        """Generate proper OpenQASM 2.0 string with actual angle values."""
+        return f'''OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+creg c[2];
+h q[1];
+ry({theta_freq:.4f}) q[0];
+cx q[0],q[1];
+rz({phi_power:.4f}) q[0];
+ry({theta_noise:.4f}) q[1];
+measure q[0] -> c[0];
+measure q[1] -> c[1];'''
+
+    def get_bloch_coordinates(self) -> Dict[str, Dict[str, float]]:
+        """Compute Bloch sphere coordinates for each qubit from state vector."""
+        state = self.get_state_vector()
+        # Partial trace for qubit 0
+        rho = np.outer(state, np.conj(state))
+        # Pauli matrices
+        X = np.array([[0,1],[1,0]], dtype=complex)
+        Y = np.array([[0,-1j],[1j,0]], dtype=complex)
+        Z = np.array([[1,0],[0,-1]], dtype=complex)
+
+        # Reduced density matrix qubit 0: trace out qubit 1
+        rho_reshaped = rho.reshape(2, 2, 2, 2)
+        rho0 = np.trace(rho_reshaped, axis1=1, axis2=3)
+
+        # Bloch vector for qubit 0
+        bx0 = float(np.real(np.trace(X @ rho0)))
+        by0 = float(np.real(np.trace(Y @ rho0)))
+        bz0 = float(np.real(np.trace(Z @ rho0)))
+
+        # Reduced density matrix qubit 1
+        rho1 = np.trace(rho_reshaped, axis1=0, axis2=2)
+        bx1 = float(np.real(np.trace(X @ rho1)))
+        by1 = float(np.real(np.trace(Y @ rho1)))
+        bz1 = float(np.real(np.trace(Z @ rho1)))
+
+        theta0 = float(np.arccos(np.clip(bz0, -1, 1)))
+        phi0 = float(np.arctan2(by0, bx0))
+        theta1 = float(np.arccos(np.clip(bz1, -1, 1)))
+        phi1 = float(np.arctan2(by1, bx1))
+
+        return {
+            'q0': {'x': bx0, 'y': by0, 'z': bz0, 'theta': theta0, 'phi': phi0},
+            'q1': {'x': bx1, 'y': by1, 'z': bz1, 'theta': theta1, 'phi': phi1},
+        }
+
 
 def test_quantum_gates():
     """Test quantum gate encoding module."""
