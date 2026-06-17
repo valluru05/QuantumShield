@@ -296,9 +296,9 @@ export function CommandCenterPage() {
               </header>
 
               {/* Main grid */}
-              <main className="p-6 grid grid-cols-12 gap-5" style={{ minHeight: 'calc(100vh - 57px)' }}>
+              <main className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5" style={{ minHeight: 'calc(100vh - 57px)' }}>
                 {/* LEFT COL — Threat Radar + System Health */}
-                <div className="col-span-3 space-y-5">
+                <div className="col-span-1 md:col-span-3 space-y-4 md:space-y-5">
                   {/* Radar */}
                   <motion.div
                     initial={{ opacity: 0, x: -30 }}
@@ -361,7 +361,7 @@ export function CommandCenterPage() {
                 </div>
 
                 {/* CENTER COL — Main Status */}
-                <div className="col-span-6 space-y-5">
+                <div className="col-span-1 md:col-span-6 space-y-4 md:space-y-5">
                   {/* Hero status */}
                   <motion.div
                     initial={{ opacity: 0, y: -20 }}
@@ -419,7 +419,7 @@ export function CommandCenterPage() {
                       <div className="grid grid-cols-3 gap-3">
                         {[
                           { label: 'ATTACK TYPE', value: attackType === 'none' ? 'NONE DETECTED' : attackType.toUpperCase(), color: attackType !== 'none' ? '#ff2244' : '#00ff88' },
-                          { label: 'ML CONFIDENCE', value: mlConfidence ? `${Math.round(mlConfidence)}%` : 'N/A', color: '#00f5ff' },
+                          { label: 'ML CONFIDENCE', value: attackType !== 'none' && mlConfidence ? `${Math.round(mlConfidence)}%` : 'N/A', color: attackType !== 'none' && mlConfidence ? '#00f5ff' : '#3a5070' },
                           { label: 'DEFENSE MODE', value: systemStatus === 'secure' ? 'QUANTUM' : 'ACTIVE', color: '#8b5cf6' },
                         ].map(({ label, value, color }) => (
                           <div key={label} className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.04)' }}>
@@ -521,7 +521,7 @@ export function CommandCenterPage() {
                 </div>
 
                 {/* RIGHT COL — Quantum engine status */}
-                <div className="col-span-3 space-y-4">
+                <div className="col-span-1 md:col-span-3 space-y-4">
                   <motion.div
                     initial={{ opacity: 0, x: 30 }}
                     animate={{ opacity: 1, x: 0 }}

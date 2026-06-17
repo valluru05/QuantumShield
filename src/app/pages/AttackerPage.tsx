@@ -87,7 +87,6 @@ export function AttackerPage() {
       className="min-h-screen text-white"
       style={{ background: 'radial-gradient(ellipse at 70% 30%, #1a0608 0%, #020408 60%)' }}
     >
-      {/* Top Nav Bar */}
       <div
         style={{
           position: 'sticky',
@@ -96,133 +95,50 @@ export function AttackerPage() {
           background: 'rgba(2,4,8,0.96)',
           borderBottom: '1px solid rgba(0,245,255,0.12)',
           backdropFilter: 'blur(12px)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '10px 24px',
         }}
       >
-        <Link
-          to="/"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '4px 10px',
-            borderRadius: 6,
-            border: '1px solid #3a507033',
-            color: '#3a5070',
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textDecoration: 'none',
-          }}
-        >
-          <ArrowLeft size={11} />
-          COMMAND CENTER
-        </Link>
-        <span style={{ color: '#1a2d45', fontFamily: 'monospace', fontSize: 10 }}>|</span>
-        <span
-          style={{
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            color: '#ff2244',
-            fontWeight: 700,
-          }}
-        >
-          ATTACK SIMULATOR
-        </span>
-        <div style={{ flex: 1 }} />
-        <Link
-          to="/attacker"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '4px 10px',
-            borderRadius: 6,
-            border: '1px solid #ff224466',
-            color: '#ff2244',
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textDecoration: 'none',
-          }}
-        >
-          <Zap size={11} />
-          ATTACKER
-        </Link>
-        <Link
-          to="/defender"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '4px 10px',
-            borderRadius: 6,
-            border: '1px solid #00f5ff33',
-            color: '#00f5ff',
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textDecoration: 'none',
-          }}
-        >
-          <Shield size={11} />
-          DEFENDER
-        </Link>
-        <Link
-          to="/quantum-lab"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '4px 10px',
-            borderRadius: 6,
-            border: '1px solid #8b5cf633',
-            color: '#8b5cf6',
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textDecoration: 'none',
-          }}
-        >
-          <Cpu size={11} />
-          QUANTUM LAB
-        </Link>
-      </div>
-
-      {/* Header */}
-      <header
-        className="px-6 py-4 flex items-center justify-between border-b"
-        style={{ background: 'rgba(2,4,8,0.4)', borderColor: 'rgba(255,34,68,0.12)', backdropFilter: 'blur(4px)' }}
-      >
-        <div className="flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-1.5 text-xs font-mono transition-colors" style={{ color: '#3a5070' }}>
-            <ArrowLeft size={14} />
-            COMMAND CENTER
+        {/* Top row: back + title + status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', flexWrap: 'wrap' }}>
+          <Link
+            to="/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 10px',
+              borderRadius: 6,
+              border: '1px solid #3a507033',
+              color: '#3a5070',
+              fontFamily: 'monospace',
+              fontSize: 10,
+              letterSpacing: '0.1em',
+              textDecoration: 'none',
+              flexShrink: 0,
+            }}
+          >
+            <ArrowLeft size={11} />
+            HOME
           </Link>
-          <div className="flex items-center gap-3">
+          <span style={{ color: '#1a2d45', fontFamily: 'monospace', fontSize: 10 }}>|</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
             <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center"
               style={{
+                width: 28, height: 28, borderRadius: 6,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: 'rgba(255,34,68,0.12)',
                 border: '1px solid rgba(255,34,68,0.3)',
-                boxShadow: attackType !== 'none' ? '0 0 15px rgba(255,34,68,0.3)' : 'none',
+                flexShrink: 0,
               }}
             >
-              <Zap size={18} style={{ color: '#ff2244' }} />
+              <Zap size={14} style={{ color: '#ff2244' }} />
             </div>
-            <div>
-              <div className="text-sm font-black tracking-widest font-mono" style={{ color: '#ff2244' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: '#ff2244' }}>
                 ATTACK SIMULATOR
               </div>
-              <div className="text-[10px]" style={{ color: '#3a5070' }}>Electronic Warfare Operations</div>
+              <div style={{ fontFamily: 'monospace', fontSize: 9, color: '#3a5070', letterSpacing: '0.05em' }}>Electronic Warfare Operations</div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
           <ConnectionStatus />
           <motion.div
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
@@ -231,6 +147,7 @@ export function AttackerPage() {
             style={{
               background: `${badge.color}0a`,
               border: `1px solid ${badge.color}33`,
+              flexShrink: 0,
             }}
           >
             <motion.div
@@ -239,16 +156,30 @@ export function AttackerPage() {
               transition={{ duration: 1, repeat: Infinity }}
               style={{ background: badge.color }}
             />
-            <span className="text-xs font-bold font-mono tracking-widest" style={{ color: badge.color }}>
+            <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: badge.color }}>
               {badge.text}
             </span>
           </motion.div>
         </div>
-      </header>
+        {/* Bottom row: page nav links */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderTop: '1px solid rgba(255,255,255,0.04)', overflowX: 'auto' }}>
+          <Link to="/attacker" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 6, border: '1px solid #ff224466', color: '#ff2244', fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.1em', textDecoration: 'none', flexShrink: 0 }}>
+            <Zap size={10} /> ATTACKER
+          </Link>
+          <Link to="/defender" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 6, border: '1px solid #00f5ff33', color: '#00f5ff', fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.1em', textDecoration: 'none', flexShrink: 0 }}>
+            <Shield size={10} /> DEFENDER
+          </Link>
+          <Link to="/quantum-lab" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 6, border: '1px solid #8b5cf633', color: '#8b5cf6', fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.1em', textDecoration: 'none', flexShrink: 0 }}>
+            <Cpu size={10} /> QUANTUM LAB
+          </Link>
+        </div>
+      </div>
 
-      <main className="p-6 grid grid-cols-12 gap-5">
+
+
+      <main className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
         {/* LEFT: Attack Arsenal */}
-        <div className="col-span-4 space-y-4">
+        <div className="col-span-1 md:col-span-4 space-y-4">
           {/* Attack buttons */}
           {ATTACK_CONFIGS.map((atk) => {
             const Icon = atk.icon;
@@ -368,7 +299,7 @@ export function AttackerPage() {
         </div>
 
         {/* RIGHT: Visualization */}
-        <div className="col-span-8 space-y-5">
+        <div className="col-span-1 md:col-span-8 space-y-5">
           {/* Target comm link status */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}

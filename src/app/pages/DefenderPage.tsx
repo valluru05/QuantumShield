@@ -42,178 +42,73 @@ export function DefenderPage() {
       className="min-h-screen text-white"
       style={{ background: 'radial-gradient(ellipse at 30% 20%, #060d1a 0%, #020408 60%)' }}
     >
-      {/* Top Nav Bar */}
+      {/* Single combined sticky header */}
       <div
         style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 1000,
+          position: 'sticky', top: 0, zIndex: 1000,
           background: 'rgba(2,4,8,0.96)',
           borderBottom: '1px solid rgba(0,245,255,0.12)',
           backdropFilter: 'blur(12px)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '10px 24px',
         }}
       >
-        <Link
-          to="/"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '4px 10px',
-            borderRadius: 6,
-            border: '1px solid #3a507033',
-            color: '#3a5070',
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textDecoration: 'none',
-          }}
-        >
-          <ArrowLeft size={11} />
-          COMMAND CENTER
-        </Link>
-        <span style={{ color: '#1a2d45', fontFamily: 'monospace', fontSize: 10 }}>|</span>
-        <span
-          style={{
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            color: '#00f5ff',
-            fontWeight: 700,
-          }}
-        >
-          DEFENSE CENTER
-        </span>
-        <div style={{ flex: 1 }} />
-        <Link
-          to="/attacker"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '4px 10px',
-            borderRadius: 6,
-            border: '1px solid #ff224433',
-            color: '#ff2244',
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textDecoration: 'none',
-          }}
-        >
-          <Zap size={11} />
-          ATTACKER
-        </Link>
-        <Link
-          to="/defender"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '4px 10px',
-            borderRadius: 6,
-            border: '1px solid #00f5ff66',
-            color: '#00f5ff',
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textDecoration: 'none',
-          }}
-        >
-          <Shield size={11} />
-          DEFENDER
-        </Link>
-        <Link
-          to="/quantum-lab"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '4px 10px',
-            borderRadius: 6,
-            border: '1px solid #8b5cf633',
-            color: '#8b5cf6',
-            fontFamily: 'monospace',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textDecoration: 'none',
-          }}
-        >
-          <Cpu size={11} />
-          QUANTUM LAB
-        </Link>
-      </div>
-
-      {/* Header */}
-      <header
-        className="px-6 py-4 flex items-center justify-between border-b"
-        style={{ background: 'rgba(2,4,8,0.4)', borderColor: 'rgba(0,245,255,0.12)', backdropFilter: 'blur(4px)' }}
-      >
-        <div className="flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-1.5 text-xs font-mono" style={{ color: '#3a5070' }}>
-            <ArrowLeft size={14} />
-            COMMAND CENTER
+        {/* Top row: back + title + status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', flexWrap: 'wrap' }}>
+          <Link
+            to="/"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px',
+              borderRadius: 6, border: '1px solid #3a507033', color: '#3a5070',
+              fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.1em',
+              textDecoration: 'none', flexShrink: 0,
+            }}
+          >
+            <ArrowLeft size={11} /> HOME
           </Link>
-          <div className="flex items-center gap-3">
+          <span style={{ color: '#1a2d45', fontFamily: 'monospace', fontSize: 10 }}>|</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
             <motion.div
               animate={systemStatus === 'secure' ? { boxShadow: ['0 0 10px rgba(0,245,255,0.3)', '0 0 25px rgba(0,245,255,0.7)', '0 0 10px rgba(0,245,255,0.3)'] } : {}}
               transition={{ duration: 2, repeat: Infinity }}
-              className="w-9 h-9 rounded-lg flex items-center justify-center"
-              style={{
-                background: 'rgba(0,245,255,0.1)',
-                border: '1px solid rgba(0,245,255,0.3)',
-              }}
+              style={{ width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,245,255,0.1)', border: '1px solid rgba(0,245,255,0.3)', flexShrink: 0 }}
             >
-              <Shield size={18} style={{ color: '#00f5ff' }} />
+              <Shield size={14} style={{ color: '#00f5ff' }} />
             </motion.div>
-            <div>
-              <div className="text-sm font-black tracking-widest font-mono" style={{ color: '#00f5ff' }}>
-                DEFENSE CENTER
-              </div>
-              <div className="text-[10px]" style={{ color: '#3a5070' }}>Quantum Shield Operations</div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: '#00f5ff' }}>DEFENSE CENTER</div>
+              <div style={{ fontFamily: 'monospace', fontSize: 9, color: '#3a5070', letterSpacing: '0.05em' }}>Quantum Shield Operations</div>
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-4">
           <ConnectionStatus />
           <motion.div
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-            animate={attackType !== 'none' ? {
-              backgroundColor: ['rgba(255,34,68,0.05)', 'rgba(255,34,68,0.12)', 'rgba(255,34,68,0.05)']
-            } : {}}
+            animate={attackType !== 'none' ? { backgroundColor: ['rgba(255,34,68,0.05)', 'rgba(255,34,68,0.12)', 'rgba(255,34,68,0.05)'] } : {}}
             transition={{ duration: 0.8, repeat: Infinity }}
-            style={{
-              background: `${statusColor}0a`,
-              border: `1px solid ${statusColor}33`,
-            }}
+            style={{ background: `${statusColor}0a`, border: `1px solid ${statusColor}33`, flexShrink: 0 }}
           >
-            <motion.div
-              className="w-1.5 h-1.5 rounded-full"
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
-              style={{ background: statusColor }}
-            />
-            <span className="text-xs font-bold font-mono tracking-widest" style={{ color: statusColor }}>
-              {statusText}
-            </span>
+            <motion.div className="w-1.5 h-1.5 rounded-full" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} style={{ background: statusColor }} />
+            <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: statusColor }}>{statusText}</span>
           </motion.div>
-          <div className="text-xs font-mono" style={{ color: '#1a2d45' }}>
-            {new Date().toLocaleTimeString('en-US', { hour12: false })}
-          </div>
         </div>
-      </header>
+        {/* Bottom row: page nav links */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderTop: '1px solid rgba(255,255,255,0.04)', overflowX: 'auto' }}>
+          <Link to="/attacker" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 6, border: '1px solid #ff224433', color: '#ff2244', fontFamily: 'monospace', fontSize: 10, textDecoration: 'none', flexShrink: 0 }}>
+            <Zap size={10} /> ATTACKER
+          </Link>
+          <Link to="/defender" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 6, border: '1px solid #00f5ff66', color: '#00f5ff', fontFamily: 'monospace', fontSize: 10, textDecoration: 'none', flexShrink: 0 }}>
+            <Shield size={10} /> DEFENDER
+          </Link>
+          <Link to="/quantum-lab" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 6, border: '1px solid #8b5cf633', color: '#8b5cf6', fontFamily: 'monospace', fontSize: 10, textDecoration: 'none', flexShrink: 0 }}>
+            <Cpu size={10} /> QUANTUM LAB
+          </Link>
+        </div>
+      </div>
 
       {/* Main content */}
-      <main className="p-6 space-y-5">
+      <main className="p-4 md:p-6 space-y-4 md:space-y-5">
         {/* Top grid: signal + detection + AI */}
-        <div className="grid grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
           {/* Left: Communication + Signal */}
-          <div className="col-span-5 space-y-5">
+          <div className="col-span-1 md:col-span-5 space-y-4 md:space-y-5">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -247,7 +142,7 @@ export function DefenderPage() {
           </div>
 
           {/* Center: Detection Panel */}
-          <div className="col-span-3">
+          <div className="col-span-1 md:col-span-3">
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -268,7 +163,7 @@ export function DefenderPage() {
           </div>
 
           {/* Right: AI Threat Intelligence */}
-          <div className="col-span-4">
+          <div className="col-span-1 md:col-span-4">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -284,12 +179,12 @@ export function DefenderPage() {
         </div>
 
         {/* Middle: QSDC + PQC panels */}
-        <div className="grid grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="col-span-6"
+            className="col-span-1 md:col-span-6"
           >
             <div className="flex items-center gap-2 mb-2">
               <Lock size={12} style={{ color: '#00f5ff' }} />
@@ -304,7 +199,7 @@ export function DefenderPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="col-span-6"
+            className="col-span-1 md:col-span-6"
           >
             <div className="flex items-center gap-2 mb-2">
               <Brain size={12} style={{ color: '#8b5cf6' }} />
