@@ -1,5 +1,5 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "quantumshield",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -7,7 +7,8 @@
     "build": "vite build",
     "dev": "vite",
     "server": "tsx watch server.ts",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\""
+    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
+    "start": "tsx server.ts"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

@@ -56,19 +56,25 @@ const SystemContext = createContext<SystemContextType | undefined>(undefined);
 // ===================== URL helpers =====================
 
 const getWSUrl = (): string => {
-  const hostname = window.location.hostname;
+  const { protocol, hostname, host } = window.location;
+  // Local dev — backend runs on a separate port (3001)
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'ws://localhost:3001';
   }
-  return `ws://${hostname}:3001`;
+  // Production — frontend is served from the same origin as the backend
+  // Use wss:// when the page is served over HTTPS
+  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${wsProtocol}//${host}`;
 };
 
 const getApiBase = (): string => {
-  const hostname = window.location.hostname;
+  const { protocol, hostname, host } = window.location;
+  // Local dev — backend runs on a separate port (3001)
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:3001';
   }
-  return `http://${hostname}:3001`;
+  // Production — same origin as the frontend
+  return `${protocol}//${host}`;
 };
 
 const WS_URL = getWSUrl();

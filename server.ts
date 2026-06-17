@@ -3,6 +3,7 @@ import http from 'http';
 import { spawn } from 'child_process';
 import path from 'path';
 import url from 'url';
+import fs from 'fs';
 
 interface Client {
   ws: WebSocket;
@@ -75,6 +76,60 @@ interface QuantumMLState {
 const PORT = process.env.PORT || 3001;
 const clients: Map<string, Client> = new Map();
 
+// ── Static file serving (production) ────────────────────────────────────────
+const DIST_PATH = path.join(process.cwd(), 'dist');
+const DIST_EXISTS = fs.existsSync(DIST_PATH);
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js':   'application/javascript',
+  '.mjs':  'application/javascript',
+  '.css':  'text/css',
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif':  'image/gif',
+  '.svg':  'image/svg+xml',
+  '.ico':  'image/x-icon',
+  '.json': 'application/json',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf':  'font/ttf',
+  '.eot':  'application/vnd.ms-fontobject',
+  '.webp': 'image/webp',
+  '.mp4':  'video/mp4',
+};
+
+function serveStatic(pathname: string, res: http.ServerResponse): boolean {
+  if (!DIST_EXISTS) return false;
+
+  const filePath = pathname === '/'
+    ? path.join(DIST_PATH, 'index.html')
+    : path.join(DIST_PATH, pathname);
+
+  // Security: prevent path traversal
+  if (!filePath.startsWith(DIST_PATH)) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return true;
+  }
+
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    const ext = path.extname(filePath);
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const data = fs.readFileSync(filePath);
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(data);
+  } else {
+    // SPA fallback — serve index.html for all unknown paths
+    const indexPath = path.join(DIST_PATH, 'index.html');
+    const data = fs.readFileSync(indexPath);
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(data);
+  }
+  return true;
+}
+
 // Quantum ML state
 let quantumMLState: QuantumMLState = {
   isTraining: false,
@@ -127,8 +182,12 @@ const server = http.createServer((req, res) => {
   } else if (pathname === '/api/quantum-ml/evaluate' && req.method === 'POST') {
     handleQuantumMLEvaluate(req, res);
   } else {
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Not Found' }));
+    // In production: serve the built React app (static files from dist/)
+    // In dev (no dist/): return 404 so the Vite dev server handles frontend
+    if (!serveStatic(pathname || '/', res)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Not Found' }));
+    }
   }
 });
 const wss = new WebSocketServer({ server });
