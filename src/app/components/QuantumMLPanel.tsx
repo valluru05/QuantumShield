@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import {
   Tabs,
@@ -6,7 +6,7 @@ import {
   TabsList,
   TabsTrigger,
 } from './ui/tabs';
-import { Cpu } from 'lucide-react';
+import { Cpu, RefreshCw } from 'lucide-react';
 import { useSystem } from '../context/SystemContext';
 import { QuantumCircuitViz } from './QuantumCircuitViz';
 import { QuantumStateViz } from './QuantumStateViz';
@@ -22,26 +22,64 @@ const getApiBase = (): string => {
   return `http://${hostname}:3001`;
 };
 
+// Generate deterministic signal based on attack type (seeded pseudo-random)
+function generateSignalForType(attackType: string): number[] {
+  const seed = attackType === 'jamming' ? 12345 : attackType === 'spoofing' ? 67890 : 11111;
+  let state = seed;
+
+  const seededRandom = () => {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    return state / 0x7fffffff;
+  };
+
+  const signal: number[] = [];
+  for (let i = 0; i < 64; i++) {
+    if (attackType === 'jamming') {
+      // Noisy signal
+      signal.push(seededRandom() * 2 - 1);
+    } else if (attackType === 'spoofing') {
+      // Shifted frequency signal
+      signal.push(Math.sin(i * 0.3 + seededRandom() * 0.1));
+    } else {
+      // Normal clean signal
+      signal.push(Math.sin(i * 0.2) * (0.8 + seededRandom() * 0.2));
+    }
+  }
+  return signal;
+}
+
 export function QuantumMLPanel() {
   const [vizData, setVizData] = useState<QuantumVizData | null>(null);
   const [clusterConfidence, setClusterConfidence] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [visualizedAttackType, setVisualizedAttackType] = useState<string | null>(null);
   const { mlConfidence, mlThreatScore, attackType } = useSystem();
 
-  const handleShowQuantumViz = async () => {
+  // Cache visualization data per attack type
+  const vizCache = useRef<Map<string, { vizData: QuantumVizData; confidence: number }>>(new Map());
+
+  const handleShowQuantumViz = async (forceRefresh = false) => {
+    // Determine attack type for visualization
+    const currentAttackType = attackType === 'none' ? 'normal' : attackType;
+
+    // Check cache first (unless force refresh)
+    if (!forceRefresh && vizCache.current.has(currentAttackType)) {
+      const cached = vizCache.current.get(currentAttackType)!;
+      setVizData(cached.vizData);
+      setClusterConfidence(cached.confidence);
+      setVisualizedAttackType(currentAttackType);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
       const API_BASE = getApiBase();
 
-      // Generate random signal for demo (in production, use actual signal data)
-      const signal = Array.from({ length: 64 }, () => Math.random());
-
-      // Use actual attack type from context, fallback to 'normal' if none
-      // This is for visualization only - should NOT change system state
-      const currentAttackType = attackType === 'none' ? 'normal' : attackType;
+      // Generate deterministic signal based on attack type
+      const signal = generateSignalForType(currentAttackType);
 
       const response = await fetch(`${API_BASE}/api/quantum/infer`, {
         method: 'POST',
@@ -50,7 +88,7 @@ export function QuantumMLPanel() {
           signal,
           attack_type: currentAttackType,
           return_full_pipeline: true,
-          visualization_only: true  // Flag to prevent state changes
+          visualization_only: true  // CRITICAL: Prevents state changes
         })
       });
 
@@ -80,7 +118,7 @@ export function QuantumMLPanel() {
         (r: number, i: number) => [r, enc.state_vector_imag?.[i] || 0] as [number, number]
       ) || [];
 
-      setVizData({
+      const newVizData: QuantumVizData = {
         circuit_qasm: enc.circuit_qasm || 'Circuit unavailable',
         state_vector: stateVector,
         basis_labels: enc.basis_labels || ['|00⟩', '|01⟩', '|10⟩', '|11⟩'],
@@ -88,10 +126,26 @@ export function QuantumMLPanel() {
         cluster_label: clust.cluster_label || 'normal',
         kernel_scores: clust.kernel_scores || {},
         quantum_walk_dist: walk.probability_dist || []
+      };
+
+      const newConfidence = clust.confidence || 0;
+
+      // Debug logging
+      console.log('Clustering data:', {
+        cluster_label: clust.cluster_label,
+        kernel_scores: clust.kernel_scores,
+        confidence: newConfidence
       });
 
-      // Store actual clustering confidence (not max kernel score)
-      setClusterConfidence(clust.confidence || 0);
+      // Cache the result
+      vizCache.current.set(currentAttackType, {
+        vizData: newVizData,
+        confidence: newConfidence
+      });
+
+      setVizData(newVizData);
+      setClusterConfidence(newConfidence);
+      setVisualizedAttackType(currentAttackType);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       console.error('Failed to get quantum visualization:', err);
@@ -112,7 +166,7 @@ export function QuantumMLPanel() {
       </div>
 
       <div className="space-y-4">
-        {/* Current Metrics */}
+        {/* Current Metrics from Attack Detection */}
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-lg border border-cyan-500/20">
             <div className="text-xs text-gray-400 mb-1">ML Confidence</div>
@@ -140,19 +194,47 @@ export function QuantumMLPanel() {
           </div>
         </div>
 
-        {/* Action Button */}
-        <Button
-          onClick={handleShowQuantumViz}
-          disabled={isLoading}
-          className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold py-2"
-        >
-          {isLoading ? '⚙️ Computing Quantum Pipeline...' : '▶ Show Quantum Pipeline'}
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button
+            onClick={() => handleShowQuantumViz(false)}
+            disabled={isLoading}
+            className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold py-2"
+          >
+            {isLoading ? '⚙️ Computing...' : vizData ? '▶ View Pipeline' : '▶ Show Quantum Pipeline'}
+          </Button>
+          {vizData && (
+            <Button
+              onClick={() => handleShowQuantumViz(true)}
+              disabled={isLoading}
+              variant="outline"
+              className="px-3 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+              title="Refresh visualization"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
+        </div>
 
         {/* Error Display */}
         {error && (
           <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded text-sm">
-            ⚠️ {error}
+            {error}
+          </div>
+        )}
+
+        {/* Visualization Info */}
+        {vizData && visualizedAttackType && (
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span>Showing pipeline for:</span>
+            <span className={`px-2 py-0.5 rounded font-medium ${
+              visualizedAttackType === 'jamming' ? 'bg-red-500/20 text-red-400' :
+              visualizedAttackType === 'spoofing' ? 'bg-amber-500/20 text-amber-400' :
+              'bg-green-500/20 text-green-400'
+            }`}>
+              {visualizedAttackType.toUpperCase()}
+            </span>
+            <span className="text-gray-600">signal type</span>
           </div>
         )}
 

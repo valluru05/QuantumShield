@@ -106,6 +106,13 @@ QuantumShield/
 │   ├── qsvm_model.json                       # Trained QSVM model
 │   └── quantum_pipeline_model.json           # Pipeline metadata
 │
+├── docs/                                     # REORGANIZED DOCUMENTATION
+│   ├── setup/                                # Setup & running guides (Multi-device setup, troubleshooting)
+│   ├── quantum/                              # Quantum ML guides and algorithms info
+│   ├── archive/                              # Archival summaries, logs, and attribution lists
+│   ├── guidelines/                           # Programming and coding guidelines
+│   └── templates/                            # UI reference templates (REACT_COMPONENTS_TEMPLATE.tsx)
+│
 ├── server.ts                                 # Node.js WebSocket server
 ├── vite.config.ts                            # Vite configuration
 ├── postcss.config.mjs                        # PostCSS for Tailwind
@@ -113,6 +120,32 @@ QuantumShield/
 └── index.html                                # HTML entry point
 ```
 
+---
+
+## 📚 Project Documentation Index
+
+All extensive documentation has been moved into the [docs/](file:///Users/revanth/Desktop/AAQC2/docs/) folder. Here is the reorganized file mapping:
+
+### ⚙️ Setup & Operations (`docs/setup/`)
+* [Get Started Guide](file:///Users/revanth/Desktop/AAQC2/docs/setup/GETTING_STARTED.md): Core overview of application startup and configuration.
+* [Quick Setup Check](file:///Users/revanth/Desktop/AAQC2/docs/setup/QUICK_SETUP.md): 3-minute steps to get everything up and running on a network.
+* [System Running Guide](file:///Users/revanth/Desktop/AAQC2/docs/setup/RUNNING_SYSTEM.md): Step-by-step UI demo flow and status test commands.
+* [Multi-Laptop Setup Guide](file:///Users/revanth/Desktop/AAQC2/docs/setup/MULTI_LAPTOP_SETUP.md): Configuring multi-device environments.
+* [Two-Laptop Visual Guide](file:///Users/revanth/Desktop/AAQC2/docs/setup/TWO_LAPTOP_VISUAL_GUIDE.md): Visual network diagram and connection routing.
+* [WebSocket Setup Guide](file:///Users/revanth/Desktop/AAQC2/docs/setup/WEBSOCKET_SETUP.md) & [Auto IP Detection](file:///Users/revanth/Desktop/AAQC2/docs/setup/WEBSOCKET_AUTO_DETECTION.md): How devices communicate over WebSockets.
+* [Network Troubleshooting](file:///Users/revanth/Desktop/AAQC2/docs/setup/TROUBLESHOOTING_NETWORK.md): Resolving connection issues across laptops.
+
+### 🔬 Quantum Machine Learning (`docs/quantum/`)
+* [Quantum ML Guide](file:///Users/revanth/Desktop/AAQC2/docs/quantum/QUANTUM_ML_GUIDE.md): Comprehensive review of QML features, centering, and scaling.
+* [Quantum Upgrade Plan](file:///Users/revanth/Desktop/AAQC2/docs/quantum/QUANTUM_UPGRADE_PLAN.md) & [Status](file:///Users/revanth/Desktop/AAQC2/docs/quantum/QUANTUM_IMPLEMENTATION_STATUS.md): Architectural review of the upgraded pipeline.
+* [QSVM Implementation Details](file:///Users/revanth/Desktop/AAQC2/docs/quantum/VQC_QSVM_IMPLEMENTATION.md): Deep dive into Quantum SVM classifiers and kernels.
+
+### 🎨 Reference Templates (`docs/templates/`)
+* [React Components Template Code](file:///Users/revanth/Desktop/AAQC2/docs/templates/REACT_COMPONENTS_TEMPLATE.tsx): Template code for UI components.
+
+### 🗃️ History & Archives (`docs/archive/`)
+* [Solution Summary](file:///Users/revanth/Desktop/AAQC2/docs/archive/SOLUTION_SUMMARY.md) & [Completion Report](file:///Users/revanth/Desktop/AAQC2/docs/archive/PROJECT_COMPLETION_REPORT.md): High-level project deliverables.
+* [Applied Fixes log](file:///Users/revanth/Desktop/AAQC2/docs/archive/FIXES.md) & [Closed Issues](file:///Users/revanth/Desktop/AAQC2/docs/archive/next.md): Notes on debugging.
 ---
 
 ## 🔬 Quantum ML System

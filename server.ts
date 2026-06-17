@@ -537,7 +537,9 @@ function handleQuantumPipelineInfer(req: http.IncomingMessage, res: http.ServerR
   req.on('end', () => {
     try {
       const data = JSON.parse(body);
-      const { signal, attack_type = 'normal', return_full_pipeline = true, visualization_only = false } = data;
+      const { signal, attack_type = 'normal', return_full_pipeline = true } = data;
+      // Explicitly coerce to boolean to prevent truthy/falsy issues
+      const visualization_only = data.visualization_only === true;
 
       // Spawn Python process for quantum inference
       const pythonProc = spawn('python3', [

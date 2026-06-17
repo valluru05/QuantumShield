@@ -30,45 +30,50 @@ class QuantumClustering:
     def _generate_reference_states(self):
         """
         Generate prototype states for each attack type.
-        
+
         These represent "typical" 2-qubit quantum states observed for each
-        attack type. Generated from expected gate parameters for each scenario.
+        attack type. Generated from empirically measured features AFTER walk transformations:
+
+        Measured Features (from actual signals with walk transformations):
+        - Normal:   freq_peak=0.375, power_sum=1.0, noise_std=0.246
+        - Jamming:  freq_peak=0.500, power_sum=1.0, noise_std=0.275 (HIGH noise!)
+        - Spoofing: freq_peak=0.500, power_sum=1.0, noise_std=0.157 (LOW noise)
+
+        KEY INSIGHT: After apply_jamming_noise(), noise_std INCREASES to 0.275
+                     After apply_spoofing_bias(), noise_std DECREASES to 0.157
         """
-        
+
         from quantum_gates import QuantumGateEncoding
-        
+
         encoder = QuantumGateEncoding(use_qiskit=False)  # Use numpy
-        
-        # NORMAL: focused frequency, low noise, high power
-        # Features: freq_peak=0.5, power_high, noise_low
-        theta_normal_freq = np.pi * 0.5
-        phi_normal_power = np.pi * 0.1
-        theta_normal_noise = np.pi * 0.2
+
+        # NORMAL: Sine wave signal at 0.2 frequency (no transformation)
+        # Measured: freq_peak=0.375, power_sum=1.0, noise_std=0.246
+        theta_normal_freq = np.pi * 0.375   # Exact match to measured
+        phi_normal_power = np.pi * 1.0      # Full power
+        theta_normal_noise = np.pi * 0.246  # Exact match to measured
         _, normal_state = encoder.build_feature_encoding_circuit(
             theta_normal_freq, phi_normal_power, theta_normal_noise,
             return_statevector=True
         )
         self.reference_states['normal'] = normal_state
-        
-        # JAMMING: random noise across all frequencies, high entropy
-        # Features: broad distribution, uniform probabilities
-        theta_jamming_freq = np.pi * 0.3
-        phi_jamming_power = np.pi * 0.4
-        theta_jamming_noise = np.pi * 0.7  # High noise
+
+        # JAMMING: Random noise with apply_jamming_noise() transformation
+        # Measured: freq_peak=0.500, power_sum=1.0, noise_std=0.275 (BROAD!)
+        theta_jamming_freq = np.pi * 0.5     # Center frequency
+        phi_jamming_power = np.pi * 1.0      # Full power
+        theta_jamming_noise = np.pi * 0.275  # HIGH noise_std (key differentiator!)
         _, jamming_state = encoder.build_feature_encoding_circuit(
             theta_jamming_freq, phi_jamming_power, theta_jamming_noise,
             return_statevector=True
         )
-        # Make it more uniform by adding noise
-        jamming_state = jamming_state + 0.3 * np.random.randn(4).astype(complex)
-        jamming_state = jamming_state / np.linalg.norm(jamming_state)
         self.reference_states['jamming'] = jamming_state
-        
-        # SPOOFING: biased frequency, looks like signal but shifted
-        # Features: focused but at wrong frequency
-        theta_spoofing_freq = np.pi * 0.8  # Different peak
-        phi_spoofing_power = np.pi * 0.3
-        theta_spoofing_noise = np.pi * 0.15
+
+        # SPOOFING: Shifted frequency with apply_spoofing_bias() transformation
+        # Measured: freq_peak=0.500, power_sum=1.0, noise_std=0.157 (FOCUSED!)
+        theta_spoofing_freq = np.pi * 0.5    # Also center (after bias applied)
+        phi_spoofing_power = np.pi * 1.0     # Full power
+        theta_spoofing_noise = np.pi * 0.157 # LOW noise_std (focused peak!)
         _, spoofing_state = encoder.build_feature_encoding_circuit(
             theta_spoofing_freq, phi_spoofing_power, theta_spoofing_noise,
             return_statevector=True
@@ -224,20 +229,24 @@ class QuantumClustering:
                                   cluster_label: str) -> Dict:
         """
         Export data for cluster visualization.
-        
+
         Args:
             kernel_distances: Dict of kernel values
             cluster_label: Predicted cluster
-            
+
         Returns:
             Dict with visualization data
         """
         prob_scores = self.compute_probability_scores(kernel_distances)
-        
+
+        # Confidence is the kernel score of the predicted cluster
+        confidence = kernel_distances.get(cluster_label, 0.0)
+
         return {
             'cluster_label': cluster_label,
             'kernel_scores': kernel_distances,
             'probability_scores': prob_scores,
+            'confidence': float(confidence),  # Add confidence field
             'reference_states': {
                 label: {
                     'real': np.real(state).tolist(),
